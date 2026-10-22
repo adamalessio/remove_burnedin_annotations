@@ -13,7 +13,7 @@ Steps:
 3) Performs Optical Character Recognition to detect text in the image
 4) If not a "L" or "R" marker, masks out region of text
 5) If text detected, save the image as a DICOM file with the same header as the input
-6) Saves a *.png file with the before and after masked image
+6) Saves a *.png file with the before and after masked image for visual confirmation
 
 
 ## Usage
