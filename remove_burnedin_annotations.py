@@ -53,7 +53,7 @@ logging.basicConfig(
     handlers=[logging.StreamHandler(sys.stdout)]
 )
 logger = logging.getLogger("DICOMAnonymizer")
-logger.setLevel(logging.DEBUG)  # Overrides root level for this logger
+#logger.setLevel(logging.DEBUG)  # Overrides root level for this logger
 
 
 class CustomArgumentParser(argparse.ArgumentParser):
