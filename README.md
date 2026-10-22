@@ -8,7 +8,5 @@ See head of `remove_burnedin_annotations.py` for install and usage instructions
 
 Examples:
   
-  python dicom_anonymizer.py -i ./input_dicoms_dir -o ./output_dicoms_dir
-
-  python dicom_anonymizer.py -i ./input_dicoms_dir -o ./output_dicoms_dir --gpu --padding 5
+  python remove_burnedin_annotations.py -i input_dicom_dir -o output_dicom_dir --gpu --padding 5
 
