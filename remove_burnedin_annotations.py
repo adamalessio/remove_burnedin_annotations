@@ -55,7 +55,7 @@ logging.basicConfig(
     handlers=[logging.StreamHandler(sys.stdout)]
 )
 logger = logging.getLogger("DICOMAnonymizer")
-#logger.setLevel(logging.DEBUG)  # Overrides root level for this logger
+logger.setLevel(logging.DEBUG)  # Overrides root level for this logger
 
 
 class CustomArgumentParser(argparse.ArgumentParser):
@@ -74,7 +74,7 @@ class TextAnnotationDetector:
         self.use_gpu = use_gpu
         self.languages = languages or ['en']
         self.ocr_reader = None
-
+       
         if HAS_EASYOCR:
             logger.info("Initializing EasyOCR text detection engine...")
             self.ocr_reader = easyocr.Reader(self.languages, gpu=self.use_gpu)
@@ -99,6 +99,10 @@ class TextAnnotationDetector:
         Returns:
             List of tuples: [(ymin, xmin, ymax, xmax), ...]
         """
+        
+        # Upsample the image for better OCR detection
+       # img_array = cv2.resize(img_array, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
+        
         norm_img = self._normalize_to_uint8(img_array)
         
         # Convert single channel grayscale to 3-channel for OCR engine if necessary
@@ -108,9 +112,23 @@ class TextAnnotationDetector:
             ocr_input = norm_img
 
         bboxes = []
+        
 
         if self.ocr_reader:
-            results = self.ocr_reader.readtext(ocr_input)
+           
+#            results = self.ocr_reader.readtext(ocr_input, min_size=self.min_size, detail=1, paragraph=False)
+            
+            results = self.ocr_reader.readtext(ocr_input,
+                        mag_ratio=2.0,        # Enlarge image for detection
+                        canvas_size=4096,    # Permit a larger detection image
+                        min_size=5,          # Default is 10
+                        text_threshold=0.5,  # Default is 0.7
+                        low_text=0.3,        # Default is 0.4
+                        link_threshold=0.3,  # Default is 0.4
+                        paragraph=False,
+                        detail=1,
+                    )
+            
             for (bbox_pts, text, prob) in results:
                 pts = np.array(bbox_pts, dtype=np.int32)
                 xmin = int(np.min(pts[:, 0]))
@@ -187,7 +205,8 @@ class DICOMAnonymizer:
         comparison = np.hstack((orig_bgr, red_bgr))
 
         save_path.parent.mkdir(parents=True, exist_ok=True)
-        cv2.imwrite(str(save_path), comparison)
+        cv2.imwrite(str(save_path), cv2.resize(comparison, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA))
+
         logger.info(f"Saved side-by-side comparison image: {save_path}")
 
     def redact_pixel_array(self, pixel_array: np.ndarray, samples_per_pixel: int = 1) -> Tuple[np.ndarray, bool]:
@@ -361,8 +380,8 @@ if __name__ == "__main__":
         description="DICOM Image Text Annotation Anonymizer with PNG Comparison",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""Examples:
-  python dicom_anonymizer.py -i ./input_dicoms -o ./output_dicoms
-  python dicom_anonymizer.py -i ./input_dicoms -o ./output_dicoms --gpu --padding 10
+  python remove_burnedin_annotations.py -i ./input_dicoms -o ./output_dicoms
+  python remove_burnedin_annotations.py -i ./input_dicoms -o ./output_dicoms --gpu --padding 5
 """
     )
     
